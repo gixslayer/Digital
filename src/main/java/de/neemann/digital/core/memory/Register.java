@@ -36,12 +36,14 @@ public class Register extends Node implements Element, Countable, ProgramCounter
     private final boolean isProbe;
     private final String label;
     private final boolean isProgramCounter;
+    private final Signal.Setter setter;
     private ObservableValue dVal;
     private ObservableValue clockVal;
     private ObservableValue enableVal;
     private ObservableValue q;
     private boolean lastClock;
     private long value;
+    private boolean enabled;
 
     /**
      * Creates a new instance
@@ -55,13 +57,17 @@ public class Register extends Node implements Element, Countable, ProgramCounter
         isProbe = attributes.get(Keys.VALUE_IS_PROBE);
         label = attributes.get(Keys.LABEL);
         isProgramCounter = attributes.get(Keys.IS_PROGRAM_COUNTER);
+        this.setter = (v, z) -> {
+            value = v;
+            q.setValue(value);
+        };
     }
 
     @Override
     public void readInputs() throws NodeException {
-        boolean enable = enableVal.getBool();
+        enabled = enableVal.getBool();
         boolean clock = clockVal.getBool();
-        if (clock && !lastClock && enable)
+        if (clock && !lastClock && enabled)
             value = dVal.getValue();
         lastClock = clock;
     }
@@ -87,10 +93,7 @@ public class Register extends Node implements Element, Countable, ProgramCounter
     public void registerNodes(Model model) {
         super.registerNodes(model);
         if (isProbe)
-            model.addSignal(new Signal(label, q, (v, z) -> {
-                value = v;
-                q.setValue(value);
-            }).setTestOutput());
+            model.addSignal(new Signal(label, q, setter).setTestOutput());
     }
 
     @Override
@@ -108,4 +111,31 @@ public class Register extends Node implements Element, Countable, ProgramCounter
         return bits;
     }
 
+    /**
+     * @return true if the register was enabled during the last clock signal change
+     */
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    /**
+     * @return the current register value
+     */
+    public long getValue() {
+        return value;
+    }
+
+    /**
+     * @return a setter that allows the value of the register to be modified
+     */
+    public Signal.Setter getSetter() {
+        return setter;
+    }
+
+    /**
+     *  @return the label of this register
+     */
+    public String getLabel() {
+        return label;
+    }
 }
