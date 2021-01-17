@@ -889,5 +889,9 @@ public final class Keys {
     public static final Key.KeyEnum<ScopeTrigger.Trigger> TRIGGER =
             new Key.KeyEnum<>("trigger", ScopeTrigger.Trigger.both, ScopeTrigger.Trigger.values());
 
-
+    /**
+     * Flag to enable conversion of inputs and outputs to probes in embedded circuits
+     */
+    public static final Key<Boolean> CONVERT_TO_PROBE
+            = new Key<>("convertToProbe", false);
 }

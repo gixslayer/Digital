@@ -11,6 +11,7 @@ import de.neemann.digital.core.NodeException;
 import de.neemann.digital.core.element.*;
 import de.neemann.digital.core.io.In;
 import de.neemann.digital.core.io.Out;
+import de.neemann.digital.core.io.Probe;
 import de.neemann.digital.core.memory.rom.ROMManger;
 import de.neemann.digital.core.wiring.Clock;
 import de.neemann.digital.core.wiring.Splitter;
@@ -145,6 +146,21 @@ public class ModelCreator implements Iterable<ModelEntry> {
                             throw new PinException(Lang.get("err_N_isNotInputOrOutput", label, circuit.getOrigin()), cve);
                         if (ioMap.containsKey(label))
                             throw new PinException(Lang.get("err_duplicatePinLabel", label, circuit.getOrigin()), cve);
+
+                        // create probe at embedded In/Out/Clock element
+                        if (ve.getElementAttributes().get(Keys.CONVERT_TO_PROBE)) {
+                            String probeLabel = combineNames(subName, label);
+                            VisualElement probeVE = new VisualElement(Probe.DESCRIPTION.getName());
+                            probeVE.setAttribute(Keys.LABEL, probeLabel);
+                            probeVE.setPos(ve.getPos());
+                            probeVE.setShapeFactory(library.getShapeFactory());
+                            Element probeElement = Probe.DESCRIPTION.createElement(probeVE.getElementAttributes());
+                            probeVE.setElement(probeElement);
+                            Pins probePins = probeVE.getPins();
+                            probePins.forEach(netList::add);
+
+                            entries.add(new ModelEntry(probeElement, probePins, probeVE, Probe.DESCRIPTION.getInputDescription(probeVE.getElementAttributes()), true, circuit.getOrigin(), cve));
+                        }
 
                         ioMap.put(label, pins.get(0));
                         isNotAIO = false;

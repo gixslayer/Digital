@@ -25,6 +25,7 @@ public class Clock implements Element {
             .addAttribute(Keys.RUN_AT_REAL_TIME)
             .addAttribute(Keys.FREQUENCY)
             .addAttribute(Keys.PINNUMBER)
+            .addAttribute(Keys.CONVERT_TO_PROBE)
             .supportsHDL();
 
     private final ObservableValue output;
