@@ -31,6 +31,7 @@ public class BarrelShifter extends Node implements Element, Countable {
             .addAttribute(Keys.BARREL_SHIFTER_MODE);
 
     private final ObservableValue out;
+    private final ObservableValue carry;
     private final int bits;
     private final int shiftBits;
     private final BarrelShifterMode mode;
@@ -40,6 +41,7 @@ public class BarrelShifter extends Node implements Element, Countable {
     private ObservableValue in;
     private ObservableValue shift;
     private long value;
+    private boolean hasCarry;
 
     /**
      * Creates a new instance
@@ -59,6 +61,7 @@ public class BarrelShifter extends Node implements Element, Countable {
         shiftBits = sBits;
 
         this.out = new ObservableValue("out", bits).setPinDescription(DESCRIPTION);
+        this.carry = new ObservableValue("carry", 1).setPinDescription(DESCRIPTION);
     }
 
     @Override
@@ -90,19 +93,34 @@ public class BarrelShifter extends Node implements Element, Countable {
                 mask = Bits.down(mask, shiftVal);
                 value |= ~mask;
             }
-
+            if (mode == BarrelShifterMode.rotate) {
+               hasCarry = Bits.isSet(value, bits - 1);
+            } else if (mode == BarrelShifterMode.logical) {
+                hasCarry = shiftVal <= bits && Bits.isSet(inVal, shiftVal - 1);
+            } else {
+                hasCarry = Bits.isSet(inVal, Math.min(bits - 1, shiftVal - 1));
+            }
+        } else if (shiftVal == 0) { // shift or rotate of 0 is a NOP, and does not produce a carry
+            value = inVal;
+            hasCarry = false;
         } else { // shift or rotate left
             if (mode == BarrelShifterMode.rotate) {
                 shiftVal = shiftVal % bits;
                 value |= Bits.down(inVal, bits - shiftVal);
             }
             value |= Bits.up(inVal, shiftVal);
+            if (mode == BarrelShifterMode.rotate) {
+                hasCarry = Bits.isSet(value, 0);
+            } else {
+                hasCarry = shiftVal <= bits && Bits.isSet(inVal, bits - shiftVal);
+            }
         }
     }
 
     @Override
     public void writeOutputs() throws NodeException {
         out.setValue(value);
+        carry.setBool(hasCarry);
     }
 
     @Override
@@ -113,7 +131,7 @@ public class BarrelShifter extends Node implements Element, Countable {
 
     @Override
     public ObservableValues getOutputs() {
-        return out.asList();
+        return new ObservableValues(out, carry);
     }
 
     @Override

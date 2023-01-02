@@ -44,6 +44,17 @@ public final class Bits {
     }
 
     /**
+     * Checks if bit [bit] is set.
+     *
+     * @param val the value to check
+     * @param bit the bit of the value to check
+     * @return true if the bit is set
+     */
+    public static boolean isSet(long val, int bit) {
+        return (Bits.down(val, bit) & 1) == 1;
+    }
+
+    /**
      * Creates a bit mask with the lowest [bits] bits set.
      *
      * @param bits the number of 1 bits
